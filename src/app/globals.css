@@ -9,7 +9,11 @@
   --accent-glow: #9678ff;
   --surface: #12132a;
   --surface-light: #1a1b3a;
-  --muted: #6b6b8d;
+  --muted: #a0a0b8;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -21,41 +25,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 0px;
-}
-
-/* Glow animation for the CTA button */
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(124, 91, 245, 0.3), 0 0 60px rgba(124, 91, 245, 0.1);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(124, 91, 245, 0.5), 0 0 80px rgba(124, 91, 245, 0.2);
-  }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-/* Floating animation for decorative elements */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-/* Subtle star twinkle */
-@keyframes twinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
-}
-
-.animate-twinkle {
-  animation: twinkle 4s ease-in-out infinite;
 }
