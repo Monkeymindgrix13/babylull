@@ -1,295 +1,350 @@
 "use client";
 
-import { Heart, Sparkles, Moon, Star } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipForward,
+  Moon,
+  CloudRain,
+  Wind,
+  Waves,
+  Heart,
+  Sparkles,
+  Clock,
+  TrendingUp,
+  ChevronRight,
+  Volume2,
+  Brain,
+  Star,
+  Flame,
+  TreePine,
+  Music,
+  Baby,
+} from "lucide-react";
+import { useState } from "react";
 
-const steps = [
+const recentMixes = [
   {
-    num: "1",
-    icon: Heart,
-    title: "Tell us about your little one",
-    desc: "Name, age, and what you\u2019ve tried. Takes 30 seconds!",
+    id: 1,
+    name: "Rainy Lullaby",
+    layers: "Piano + Rain + Heartbeat",
+    duration: "42 min",
+    rating: 4.8,
+    icon: CloudRain,
+    color: "from-blue-500/20 to-blue-600/5",
+    iconColor: "text-blue-400",
   },
   {
-    num: "2",
-    icon: Sparkles,
-    title: "AI mixes the perfect sounds",
-    desc: "4 science-backed layers. 576,000+ combos. Zero guesswork.",
+    id: 2,
+    name: "Ocean Dreams",
+    layers: "Waves + Wind + Music Box",
+    duration: "38 min",
+    rating: 4.9,
+    icon: Waves,
+    color: "from-cyan-500/20 to-cyan-600/5",
+    iconColor: "text-cyan-400",
   },
   {
-    num: "3",
-    icon: Moon,
-    title: "Baby sleeps. AI gets smarter.",
-    desc: "Rate each session. Tomorrow\u2019s mix is even better. Magic? Almost.",
+    id: 3,
+    name: "Forest Night",
+    layers: "Crickets + Stream + Hum",
+    duration: "55 min",
+    rating: 4.6,
+    icon: TreePine,
+    color: "from-emerald-500/20 to-emerald-600/5",
+    iconColor: "text-emerald-400",
   },
 ];
 
-const layers = [
-  {
-    emoji: "\u{1F3B5}",
-    name: "Melody",
-    desc: "The lullaby your baby didn\u2019t know they needed",
-    color: "bg-purple-500",
-    width: "85%",
-  },
-  {
-    emoji: "\u{1F327}\u{FE0F}",
-    name: "Background",
-    desc: "Rain, ocean, or womb sounds \u2014 their cozy cocoon",
-    color: "bg-blue-500",
-    width: "72%",
-  },
-  {
-    emoji: "\u{1F493}",
-    name: "Heartbeat",
-    desc: "60 BPM. Like sleeping on mama\u2019s chest",
-    color: "bg-pink-500",
-    width: "58%",
-  },
-  {
-    emoji: "\u{1F343}",
-    name: "Ambience",
-    desc: "The finishing touch. Wind chimes, crickets, pure calm",
-    color: "bg-emerald-500",
-    width: "78%",
-  },
+const categories = [
+  { name: "White Noise", icon: Wind, count: 24, color: "text-slate-400" },
+  { name: "Lullabies", icon: Music, count: 18, color: "text-purple-400" },
+  { name: "Nature", icon: TreePine, count: 31, color: "text-emerald-400" },
+  { name: "Heartbeats", icon: Heart, count: 12, color: "text-pink-400" },
+  { name: "Rain", icon: CloudRain, count: 16, color: "text-blue-400" },
+  { name: "Ocean", icon: Waves, count: 14, color: "text-cyan-400" },
 ];
 
-const reviews = [
-  {
-    quote: "My son was out in 8 minutes. I cried happy tears.",
-    name: "Sarah",
-    detail: "mom of 4-month-old",
-    stars: 5,
-  },
-  {
-    quote: "We tried EVERYTHING. This app actually learns.",
-    name: "Mike",
-    detail: "dad of twins",
-    stars: 5,
-  },
-  {
-    quote: "The AI recommended rain + piano. Game changer.",
-    name: "Lisa",
-    detail: "mom of 7-month-old",
-    stars: 5,
-  },
+const weekStats = [
+  { day: "Mon", hours: 3.2, max: 5 },
+  { day: "Tue", hours: 4.1, max: 5 },
+  { day: "Wed", hours: 2.8, max: 5 },
+  { day: "Thu", hours: 4.5, max: 5 },
+  { day: "Fri", hours: 3.9, max: 5 },
+  { day: "Sat", hours: 4.8, max: 5 },
+  { day: "Sun", hours: 4.2, max: 5 },
 ];
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 6) return "Good night";
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  if (hour < 21) return "Good evening";
+  return "Good night";
+}
 
 export default function Home() {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [nowPlayingProgress] = useState(0.35);
+
   return (
-    <div>
-      {/* ================================================================ */}
-      {/* HERO                                                             */}
-      {/* ================================================================ */}
-      <section className="flex flex-col items-center text-center px-6 pt-16 sm:pt-24 pb-24">
-        {/* Pill badge */}
-        <div className="inline-flex items-center px-4 py-2 rounded-full bg-[#12132a] border border-[#1e1f3a] text-sm text-[#a0a0b8] mb-10">
-          <span className="mr-1.5">{"\u{1F9D2}"}</span> Your baby&apos;s new
-          favorite app
-        </div>
+    <div className="px-4 py-5 space-y-5 max-w-lg mx-auto">
 
-        {/* Headlines */}
-        <h1 className="text-[48px] md:text-[64px] font-bold leading-[1.05] tracking-tight text-white mb-3">
-          Shh... the AI is mixing
+      {/* Greeting */}
+      <section>
+        <p className="text-muted text-xs font-medium uppercase tracking-wider mb-1">
+          {getGreeting()}
+        </p>
+        <h1 className="text-xl font-semibold text-white leading-tight">
+          Emma&apos;s Bedtime
         </h1>
-        <h2 className="text-xl sm:text-2xl md:text-3xl font-semibold text-white/70 mb-6">
-          Your Baby&apos;s Perfect Sleep Sound
-        </h2>
-        <p className="text-[#a0a0b8] text-base sm:text-lg max-w-md leading-relaxed mb-10">
-          Smart sounds that learn what{" "}
-          <span className="text-white font-medium">YOUR</span> baby loves.
-          Better sleep starts tonight.
-        </p>
-
-        {/* Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-6 w-full sm:w-auto">
-          <button className="px-8 py-4 bg-[#7c5bf5] text-white font-semibold rounded-full text-base hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200">
-            Start Free Trial {"\u{1F680}"}
-          </button>
-          <a
-            href="#how-it-works"
-            className="px-8 py-4 border border-[#1e1f3a] text-white font-semibold rounded-full text-base text-center hover:scale-[1.02] hover:border-[#7c5bf5]/50 transition-all duration-200"
-          >
-            How does it work?
-          </a>
-        </div>
-
-        <p className="text-[#a0a0b8]/60 text-sm">
-          7 days free &middot; No credit card &middot; Cancel anytime{" "}
-          {"\u{1F49C}"}
-        </p>
       </section>
 
-      {/* ================================================================ */}
-      {/* STATS BAR                                                        */}
-      {/* ================================================================ */}
-      <section className="px-6 pb-24">
-        <div className="max-w-2xl mx-auto rounded-2xl bg-[#12132a] border border-[#1e1f3a] py-6 px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-0 text-center">
-            <div className="sm:border-r sm:border-[#1e1f3a]">
-              <p className="text-white font-semibold">
-                <span className="mr-1.5">{"\u{1F634}"}</span>50,000+
-              </p>
-              <p className="text-[#a0a0b8] text-sm mt-0.5">bedtimes powered</p>
-            </div>
-            <div className="sm:border-r sm:border-[#1e1f3a]">
-              <p className="text-white font-semibold">
-                <span className="mr-1.5">{"\u2B50"}</span>4.9
-              </p>
-              <p className="text-[#a0a0b8] text-sm mt-0.5">
-                from happy parents
-              </p>
-            </div>
-            <div>
-              <p className="text-white font-semibold">
-                <span className="mr-1.5">{"\u{1F9D2}"}</span>10,000+
-              </p>
-              <p className="text-[#a0a0b8] text-sm mt-0.5">
-                AI training sessions
-              </p>
-            </div>
+      {/* Now Playing Card */}
+      <section className="rounded-2xl bg-gradient-to-br from-accent/15 via-surface to-surface border border-white/[0.06] p-4">
+        <div className="flex items-center gap-1.5 mb-3">
+          <div className="w-1.5 h-1.5 rounded-full bg-accent-glow animate-pulse" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-accent-glow">
+            Now Playing
+          </span>
+        </div>
+
+        <div className="flex items-center gap-3.5 mb-4">
+          <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-accent/30 to-purple-900/40 border border-white/[0.06] flex items-center justify-center flex-shrink-0">
+            <Moon size={24} className="text-accent-glow" />
           </div>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* HOW IT WORKS                                                     */}
-      {/* ================================================================ */}
-      <section id="how-it-works" className="px-6 py-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              Easy as 1, 2, zzz... {"\u{1F634}"}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-sm font-semibold text-white truncate">
+              Rainy Lullaby Mix
             </h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {steps.map((step) => (
-              <div
-                key={step.num}
-                className="rounded-2xl bg-[#12132a] border border-[#1e1f3a] p-6 text-center hover:scale-[1.02] transition-transform duration-200"
-              >
-                <div className="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-[#7c5bf5]/10 border border-[#7c5bf5]/15 mb-4">
-                  <step.icon size={20} className="text-[#7c5bf5]" />
-                </div>
-                <div className="text-xs font-bold text-[#7c5bf5]/50 tracking-widest mb-2">
-                  STEP {step.num}
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-xs text-[#a0a0b8] leading-relaxed">
-                  {step.desc}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* THE 4 LAYERS                                                     */}
-      {/* ================================================================ */}
-      <section className="px-6 py-24">
-        <div className="max-w-lg mx-auto">
-          <div className="text-center mb-4">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              Not just white noise. Smart noise. {"\u{1F9EC}"}
-            </h2>
-          </div>
-          <p className="text-[#a0a0b8] text-center text-sm mb-14">
-            4 science-backed layers working together
-          </p>
-
-          <div className="space-y-4">
-            {layers.map((layer) => (
-              <div
-                key={layer.name}
-                className="rounded-2xl bg-[#12132a] border border-[#1e1f3a] p-5 hover:scale-[1.02] transition-transform duration-200"
-              >
-                <div className="flex items-start gap-4">
-                  <span className="text-2xl leading-none mt-0.5">
-                    {layer.emoji}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-white mb-1">
-                      {layer.name}
-                    </h3>
-                    <p className="text-xs text-[#a0a0b8] leading-relaxed">
-                      {layer.desc}
-                    </p>
-                  </div>
-                </div>
-                {/* Colored bar */}
-                <div className="mt-4 h-1 rounded-full bg-white/[0.04] overflow-hidden">
+            <p className="text-xs text-muted mt-0.5">
+              Piano + Rain + Heartbeat + Wind
+            </p>
+            <div className="flex items-center gap-1.5 mt-1.5">
+              <Volume2 size={10} className="text-muted" />
+              <div className="flex gap-[2px]">
+                {[0.6, 0.8, 0.4, 1, 0.7, 0.5, 0.9, 0.3, 0.8, 0.6, 0.4, 0.7].map((h, i) => (
                   <div
-                    className={`h-full rounded-full ${layer.color}/40`}
-                    style={{ width: layer.width }}
+                    key={i}
+                    className="w-[3px] rounded-full bg-accent-glow/60"
+                    style={{ height: `${h * 12}px` }}
                   />
-                </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
-      </section>
 
-      {/* ================================================================ */}
-      {/* TESTIMONIALS                                                     */}
-      {/* ================================================================ */}
-      <section className="px-6 py-24">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
-              Parents are sleeping too {"\u{1F634}"}
-            </h2>
+        {/* Progress bar */}
+        <div className="mb-3">
+          <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-accent to-accent-glow"
+              style={{ width: `${nowPlayingProgress * 100}%` }}
+            />
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            {reviews.map((r) => (
-              <div
-                key={r.name}
-                className="rounded-2xl bg-[#12132a] border border-[#1e1f3a] p-5 hover:scale-[1.02] transition-transform duration-200"
-              >
-                {/* Stars */}
-                <div className="flex gap-0.5 mb-3">
-                  {Array.from({ length: r.stars }).map((_, j) => (
-                    <Star
-                      key={j}
-                      size={13}
-                      className="text-yellow-400 fill-yellow-400"
-                    />
-                  ))}
-                </div>
-                <p className="text-sm text-white/80 leading-relaxed mb-4">
-                  &ldquo;{r.quote}&rdquo;
-                </p>
-                <p className="text-xs text-[#a0a0b8]">
-                  <span className="text-white font-medium">{r.name}</span>
-                  {" \u2014 "}
-                  {r.detail}
-                </p>
-              </div>
-            ))}
+          <div className="flex justify-between mt-1.5">
+            <span className="text-[10px] text-muted">14:42</span>
+            <span className="text-[10px] text-muted">42:00</span>
           </div>
         </div>
-      </section>
 
-      {/* ================================================================ */}
-      {/* BOTTOM CTA                                                       */}
-      {/* ================================================================ */}
-      <section className="px-6 py-24 pb-32">
-        <div className="max-w-md mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-4">
-            Your baby&apos;s perfect mix is waiting {"\u{1F319}"}
-          </h2>
-          <button className="mt-6 px-8 py-4 bg-[#7c5bf5] text-white font-semibold rounded-full text-base hover:scale-[1.02] active:scale-[0.98] transition-transform duration-200">
-            Start Free Trial {"\u{1F680}"}
+        {/* Controls */}
+        <div className="flex items-center justify-center gap-6">
+          <button className="text-muted hover:text-white transition-colors">
+            <Clock size={18} />
           </button>
-          <p className="mt-6 text-[#a0a0b8]/60 text-sm">
-            Join 2,000+ parents who actually sleep now
-          </p>
+          <button
+            onClick={() => setIsPlaying(!isPlaying)}
+            className="w-12 h-12 rounded-full bg-accent hover:bg-accent-glow flex items-center justify-center transition-colors"
+          >
+            {isPlaying ? (
+              <Pause size={20} className="text-white" fill="white" />
+            ) : (
+              <Play size={20} className="text-white ml-0.5" fill="white" />
+            )}
+          </button>
+          <button className="text-muted hover:text-white transition-colors">
+            <SkipForward size={18} />
+          </button>
         </div>
       </section>
+
+      {/* AI Insight Card */}
+      <section className="rounded-2xl bg-surface border border-white/[0.06] p-4">
+        <div className="flex items-start gap-3">
+          <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Brain size={16} className="text-accent-glow" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 mb-1">
+              <Sparkles size={10} className="text-accent-glow" />
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-accent-glow">
+                AI Insight
+              </span>
+            </div>
+            <p className="text-xs text-white/80 leading-relaxed">
+              Emma falls asleep 23% faster with rain sounds after 7 PM.
+              Tonight&apos;s mix has been optimized with heavier rainfall
+              and a slower piano tempo.
+            </p>
+            <button className="flex items-center gap-1 mt-2.5 text-[11px] font-medium text-accent-glow hover:text-white transition-colors">
+              View sleep analysis
+              <ChevronRight size={12} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Quick Stats Row */}
+      <section className="grid grid-cols-3 gap-2.5">
+        <div className="rounded-xl bg-surface border border-white/[0.06] p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1.5">
+            <Moon size={12} className="text-accent-glow" />
+          </div>
+          <p className="text-lg font-semibold text-white leading-none">7.2</p>
+          <p className="text-[10px] text-muted mt-1">avg hours</p>
+        </div>
+        <div className="rounded-xl bg-surface border border-white/[0.06] p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1.5">
+            <TrendingUp size={12} className="text-emerald-400" />
+          </div>
+          <p className="text-lg font-semibold text-white leading-none">+18%</p>
+          <p className="text-[10px] text-muted mt-1">this week</p>
+        </div>
+        <div className="rounded-xl bg-surface border border-white/[0.06] p-3 text-center">
+          <div className="flex items-center justify-center gap-1 mb-1.5">
+            <Flame size={12} className="text-orange-400" />
+          </div>
+          <p className="text-lg font-semibold text-white leading-none">12</p>
+          <p className="text-[10px] text-muted mt-1">day streak</p>
+        </div>
+      </section>
+
+      {/* Weekly Sleep Chart */}
+      <section className="rounded-2xl bg-surface border border-white/[0.06] p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-semibold text-white">This Week</h3>
+          <span className="text-[10px] text-muted font-medium">
+            Avg 3.9h / night
+          </span>
+        </div>
+        <div className="flex items-end justify-between gap-2 h-20">
+          {weekStats.map((stat) => (
+            <div key={stat.day} className="flex-1 flex flex-col items-center gap-1.5">
+              <div className="w-full flex flex-col justify-end h-14">
+                <div
+                  className="w-full rounded-t-sm bg-gradient-to-t from-accent/60 to-accent-glow/40"
+                  style={{ height: `${(stat.hours / stat.max) * 100}%` }}
+                />
+              </div>
+              <span className="text-[9px] text-muted font-medium">{stat.day}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Recent Mixes */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-white">Recent Mixes</h3>
+          <button className="flex items-center gap-0.5 text-[11px] text-muted hover:text-accent-glow transition-colors">
+            See all <ChevronRight size={12} />
+          </button>
+        </div>
+        <div className="space-y-2">
+          {recentMixes.map((mix) => {
+            const Icon = mix.icon;
+            return (
+              <div
+                key={mix.id}
+                className="flex items-center gap-3 rounded-xl bg-surface border border-white/[0.06] p-3 hover:border-white/[0.1] transition-colors cursor-pointer"
+              >
+                <div className={`w-10 h-10 rounded-lg bg-gradient-to-br ${mix.color} border border-white/[0.06] flex items-center justify-center flex-shrink-0`}>
+                  <Icon size={18} className={mix.iconColor} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-semibold text-white truncate">
+                    {mix.name}
+                  </h4>
+                  <p className="text-[10px] text-muted mt-0.5 truncate">
+                    {mix.layers}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-0.5">
+                    <Star size={9} className="text-yellow-500 fill-yellow-500" />
+                    <span className="text-[10px] text-muted font-medium">{mix.rating}</span>
+                  </div>
+                  <span className="text-[10px] text-muted">{mix.duration}</span>
+                </div>
+                <button className="w-8 h-8 rounded-full bg-white/[0.04] hover:bg-white/[0.08] flex items-center justify-center flex-shrink-0 transition-colors">
+                  <Play size={12} className="text-white ml-0.5" fill="white" />
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Sound Categories */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-white">Browse Sounds</h3>
+          <button className="flex items-center gap-0.5 text-[11px] text-muted hover:text-accent-glow transition-colors">
+            All categories <ChevronRight size={12} />
+          </button>
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          {categories.map((cat) => {
+            const Icon = cat.icon;
+            return (
+              <button
+                key={cat.name}
+                className="flex flex-col items-center gap-2 rounded-xl bg-surface border border-white/[0.06] p-3.5 hover:border-white/[0.1] transition-colors"
+              >
+                <Icon size={20} className={cat.color} strokeWidth={1.8} />
+                <div className="text-center">
+                  <p className="text-[11px] font-medium text-white">{cat.name}</p>
+                  <p className="text-[9px] text-muted mt-0.5">{cat.count} sounds</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Tonight's Recommendation */}
+      <section className="rounded-2xl bg-gradient-to-br from-surface-light to-surface border border-white/[0.06] p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Baby size={14} className="text-accent-glow" />
+          <span className="text-[11px] font-semibold text-white">
+            Tonight&apos;s Recommendation
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-600/10 border border-white/[0.06] flex items-center justify-center flex-shrink-0">
+            <CloudRain size={20} className="text-indigo-400" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="text-xs font-semibold text-white">Gentle Storm</h4>
+            <p className="text-[10px] text-muted mt-0.5">
+              Rain + Soft Piano + 58 BPM Heartbeat
+            </p>
+            <div className="flex items-center gap-1 mt-1">
+              <Sparkles size={9} className="text-accent-glow" />
+              <span className="text-[10px] text-accent-glow font-medium">
+                92% match score
+              </span>
+            </div>
+          </div>
+          <button className="w-10 h-10 rounded-full bg-accent hover:bg-accent-glow flex items-center justify-center flex-shrink-0 transition-colors">
+            <Play size={14} className="text-white ml-0.5" fill="white" />
+          </button>
+        </div>
+      </section>
+
     </div>
   );
 }
