@@ -42,10 +42,10 @@ export default function AuthInput({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`w-full h-11 pl-11 pr-4 rounded-xl bg-surface border text-sm text-foreground placeholder:text-muted/50 outline-none transition-colors ${
+          className={`w-full h-11 pl-11 pr-4 rounded-xl bg-surface border text-sm text-foreground placeholder:text-muted/50 outline-none transition-all duration-200 focus:bg-surface-light ${
             error
               ? "border-red-500/50 focus:border-red-500"
-              : "border-white/[0.06] focus:border-accent/50"
+              : "border-white/[0.06] focus:border-accent/40"
           }`}
         />
       </div>

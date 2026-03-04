@@ -30,7 +30,7 @@ body {
 }
 
 @keyframes twinkle {
-  0%, 100% { opacity: 0; }
+  0%, 100% { opacity: 0.15; }
   50% { opacity: 1; }
 }
 

@@ -96,7 +96,7 @@ export default function LoginPage() {
             </p>
           </div>
         ) : (
-          <form onSubmit={handleResetPassword} className="space-y-4">
+          <form onSubmit={handleResetPassword} className="space-y-5">
             <AuthInput
               id="reset-email"
               label="Email"
@@ -130,7 +130,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <AuthInput
           id="email"
           label="Email"
