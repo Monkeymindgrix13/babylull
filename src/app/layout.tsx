@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Header from "@/components/Header";
-import BottomNav from "@/components/BottomNav";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -29,11 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} font-[family-name:var(--font-inter)] antialiased`}>
-        <Header />
-        <main className="pt-14 pb-20 min-h-screen">
-          {children}
-        </main>
-        <BottomNav />
+        {children}
       </body>
     </html>
   );
