@@ -44,9 +44,9 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="rounded-2xl bg-surface border border-white/[0.06] p-6">
-      <h1 className="text-xl font-semibold text-white mb-1">Create account</h1>
-      <p className="text-sm text-muted mb-6">Start your baby&apos;s sleep journey</p>
+    <div className="auth-card bg-surface p-6">
+      <h1 className="text-xl font-semibold text-white mb-1">Start your journey</h1>
+      <p className="text-sm text-muted mb-6">Your baby&apos;s better sleep begins here</p>
 
       {errors.general && (
         <div className="flex items-start gap-3 rounded-xl bg-red-500/10 border border-red-500/20 p-3.5 mb-5">
@@ -101,7 +101,7 @@ export default function SignupPage() {
           autoComplete="new-password"
         />
 
-        <AuthButton loading={loading}>Create account</AuthButton>
+        <AuthButton loading={loading}>Start your journey</AuthButton>
       </form>
 
       <p className="text-center text-sm text-muted mt-6">
