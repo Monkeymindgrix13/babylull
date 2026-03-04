@@ -42,8 +42,6 @@ body {
 .auth-card {
   border-radius: 20px;
   background: var(--surface);
-  border-style: solid !important;
-  border-width: 1px !important;
-  border-color: rgba(124, 91, 245, 0.15) !important;
-  box-shadow: 0 0 30px rgba(124, 91, 245, 0.15), 0 0 60px rgba(124, 91, 245, 0.05);
+  border: none;
+  box-shadow: 0 0 0 1px rgba(124, 91, 245, 0.15), 0 0 30px rgba(124, 91, 245, 0.15), 0 0 60px rgba(124, 91, 245, 0.05);
 }
