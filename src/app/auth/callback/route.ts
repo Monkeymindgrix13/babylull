@@ -9,7 +9,23 @@ export async function GET(request: Request) {
     const supabase = createSupabaseServer();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}/`);
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed")
+          .eq("id", user.id)
+          .single();
+
+        if (profile?.onboarding_completed) {
+          return NextResponse.redirect(`${origin}/`);
+        }
+      }
+
+      return NextResponse.redirect(`${origin}/onboarding`);
     }
   }
 
