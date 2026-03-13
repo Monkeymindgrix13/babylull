@@ -17,7 +17,7 @@ import {
 
 import { supabase } from "@/lib/supabase";
 
-const AGE_RANGES = ["0–3 months", "3–6 months", "6–9 months", "9–12 months"];
+const AGE_RANGES = ["0–3 months", "3–6 months", "6–9 months", "9+ months"];
 
 const CHALLENGES = [
   "Falls asleep hard",
