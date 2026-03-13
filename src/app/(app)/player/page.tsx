@@ -57,6 +57,18 @@ interface MixWithUrls extends Mix {
 
 const TIMER_OPTIONS = [15, 30, 45, 60, 90] as const;
 
+// ── Equalizer bars ───────────────────────────────────────────
+
+function EqBars({ playing }: { playing: boolean }) {
+  return (
+    <div className="flex items-end gap-[3px] h-5">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className={`eq-bar ${playing ? "" : "paused"}`} />
+      ))}
+    </div>
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export default function PlayerPage() {
@@ -65,6 +77,9 @@ export default function PlayerPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [masterVolume, setMasterVolume] = useState(0.7);
+  const [cardKey, setCardKey] = useState(0);
+  const [rippleKey, setRippleKey] = useState<number | null>(null);
+  const [bouncingPill, setBouncingPill] = useState<number | null>(null);
 
   // Sleep timer
   const [timerMinutes, setTimerMinutes] = useState<number | null>(null);
@@ -123,12 +138,10 @@ export default function PlayerPage() {
 
   const playCurrentMix = useCallback(
     async (mix: MixWithUrls) => {
-      // Restore master volume before playing
       audioManager.setMasterVolume(masterVolume);
       await audioManager.playMix(mix.layersWithUrls);
       setIsPlaying(true);
 
-      // Update media session for lock screen controls
       if (typeof navigator !== "undefined" && "mediaSession" in navigator) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: mix.name,
@@ -145,6 +158,9 @@ export default function PlayerPage() {
   async function handlePlayPause() {
     if (!currentMix) return;
 
+    // Trigger ripple
+    setRippleKey(Date.now());
+
     if (isPlaying) {
       audioManager.stopAll();
       setIsPlaying(false);
@@ -157,6 +173,7 @@ export default function PlayerPage() {
     if (mixes.length === 0) return;
     const nextIndex = (currentIndex + direction + mixes.length) % mixes.length;
     setCurrentIndex(nextIndex);
+    setCardKey((k) => k + 1);
 
     if (isPlaying) {
       await playCurrentMix(mixes[nextIndex]);
@@ -184,9 +201,9 @@ export default function PlayerPage() {
     clearTimer();
 
     if (minutes === null || minutes === timerMinutes) {
-      // Toggle off
       setTimerMinutes(null);
       setTimerRemaining(null);
+      setBouncingPill(null);
       return;
     }
 
@@ -194,10 +211,13 @@ export default function PlayerPage() {
     setTimerRemaining(minutes * 60);
     fadeStartedRef.current = false;
 
+    // Trigger bounce animation
+    setBouncingPill(minutes);
+    setTimeout(() => setBouncingPill(null), 300);
+
     timerRef.current = setInterval(() => {
       setTimerRemaining((prev) => {
         if (prev === null || prev <= 1) {
-          // Timer done — stop everything
           clearTimer();
           audioManager.stopAll();
           setIsPlaying(false);
@@ -207,7 +227,6 @@ export default function PlayerPage() {
 
         const next = prev - 1;
 
-        // Start fade at 60s remaining (or total duration if < 60s)
         if (next <= 60 && !fadeStartedRef.current) {
           fadeStartedRef.current = true;
           audioManager.fadeOut(next * 1000);
@@ -256,65 +275,84 @@ export default function PlayerPage() {
   }
 
   const Icon = ICON_MAP[currentMix.icon_name] || Volume2;
+  const volumePct = masterVolume * 100;
 
   return (
-    <div className="flex flex-col items-center px-4 py-6 max-w-md mx-auto min-h-[calc(100vh-8rem)]">
-      {/* ── Artwork ──────────────────────────────────────── */}
+    <div className="flex flex-col items-center px-5 py-8 max-w-md mx-auto min-h-[calc(100vh-8rem)]">
+
+      {/* ── Artwork card ───────────────────────────────────── */}
       <div
-        className="w-full aspect-square max-w-[320px] rounded-3xl flex flex-col items-center justify-center gap-4 shadow-2xl"
+        key={cardKey}
+        className="artwork-gradient card-transition relative w-full aspect-[4/4.2] max-w-[320px] rounded-3xl flex flex-col items-center justify-center gap-5 overflow-hidden"
         style={{
-          background: `linear-gradient(135deg, ${currentMix.color_from}, ${currentMix.color_to})`,
+          background: `linear-gradient(135deg, ${currentMix.color_from}, ${currentMix.color_to}, ${currentMix.color_from})`,
+          backgroundSize: "200% 200%",
         }}
       >
-        <Icon size={72} className="text-white/90" strokeWidth={1.5} />
-        <div className="text-center px-6">
-          <h1 className="text-2xl font-bold text-white">{currentMix.name}</h1>
-          <p className="text-sm text-white/70 mt-1">{currentMix.description}</p>
+        {/* Bottom inner shadow for text legibility */}
+        <div className="absolute inset-0 rounded-3xl" style={{
+          background: "linear-gradient(to top, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 50%)",
+        }} />
+
+        <Icon size={64} className="text-white/90 relative z-10" strokeWidth={1.5} />
+
+        <div className="text-center px-6 relative z-10">
+          <div className="flex items-center justify-center gap-2">
+            <h1 className="text-2xl font-bold text-white">{currentMix.name}</h1>
+            {isPlaying && <EqBars playing={isPlaying} />}
+          </div>
+          <p className="text-sm text-white/70 mt-1.5">{currentMix.description}</p>
         </div>
       </div>
 
       {/* ── Playback controls ────────────────────────────── */}
-      <div className="flex items-center justify-center gap-8 mt-8">
+      <div className="flex items-center justify-center gap-10 mt-10">
         <button
           onClick={() => handleSkip(-1)}
-          className="p-3 rounded-full hover:bg-white/[0.06] transition-colors"
+          className="p-4 rounded-full hover:bg-white/[0.08] active:scale-95 transition-all duration-200"
           aria-label="Previous mix"
         >
-          <SkipBack size={24} className="text-white" fill="white" />
+          <SkipBack size={26} className="text-white/90" fill="rgba(255,255,255,0.9)" />
         </button>
 
         <button
           onClick={handlePlayPause}
-          className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform"
+          className={`play-btn-glow ${isPlaying ? "is-playing" : ""} relative w-[72px] h-[72px] rounded-full flex items-center justify-center active:scale-95 transition-transform duration-150`}
+          style={{ background: "var(--accent)" }}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
+          {rippleKey !== null && (
+            <span key={rippleKey} className="play-btn-ripple" />
+          )}
           {isPlaying ? (
-            <Pause size={28} className="text-black" fill="black" />
+            <Pause size={30} className="text-white relative z-10" fill="white" />
           ) : (
-            <Play size={28} className="text-black ml-1" fill="black" />
+            <Play size={30} className="text-white relative z-10 ml-1" fill="white" />
           )}
         </button>
 
         <button
           onClick={() => handleSkip(1)}
-          className="p-3 rounded-full hover:bg-white/[0.06] transition-colors"
+          className="p-4 rounded-full hover:bg-white/[0.08] active:scale-95 transition-all duration-200"
           aria-label="Next mix"
         >
-          <SkipForward size={24} className="text-white" fill="white" />
+          <SkipForward size={26} className="text-white/90" fill="rgba(255,255,255,0.9)" />
         </button>
       </div>
 
       {/* ── Master volume ────────────────────────────────── */}
-      <div className="w-full flex items-center gap-3 mt-8 px-2">
-        {masterVolume > 0 ? (
-          <VolumeX
-            size={18}
-            className="text-muted flex-shrink-0 cursor-pointer"
-            onClick={() => handleMasterVolume(0)}
-          />
-        ) : (
-          <VolumeX size={18} className="text-muted flex-shrink-0" />
-        )}
+      <div className="w-full flex items-center gap-3 mt-10 px-1">
+        <button
+          onClick={() => handleMasterVolume(masterVolume > 0 ? 0 : 0.7)}
+          className="p-1 flex-shrink-0"
+          aria-label={masterVolume > 0 ? "Mute" : "Unmute"}
+        >
+          {masterVolume > 0 ? (
+            <Volume2 size={18} className="text-white/60" />
+          ) : (
+            <VolumeX size={18} className="text-white/60" />
+          )}
+        </button>
         <input
           type="range"
           min="0"
@@ -322,47 +360,53 @@ export default function PlayerPage() {
           step="0.01"
           value={masterVolume}
           onChange={(e) => handleMasterVolume(parseFloat(e.target.value))}
-          className="flex-1 h-1.5 rounded-full appearance-none bg-white/10 accent-accent cursor-pointer"
+          className="volume-track flex-1"
           style={{
-            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${masterVolume * 100}%, rgba(255,255,255,0.1) ${masterVolume * 100}%, rgba(255,255,255,0.1) 100%)`,
+            background: `linear-gradient(to right, var(--accent-glow) 0%, var(--accent) ${volumePct}%, rgba(255,255,255,0.08) ${volumePct}%, rgba(255,255,255,0.08) 100%)`,
           }}
         />
-        <Volume2 size={18} className="text-muted flex-shrink-0" />
+        <Volume2 size={18} className="text-white/60 flex-shrink-0" />
       </div>
 
       {/* ── Sleep timer ──────────────────────────────────── */}
-      <div className="w-full mt-8 space-y-3">
+      <div className="w-full mt-10 space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+          <span className="text-xs font-semibold text-white/50 uppercase tracking-wider">
             Sleep Timer
           </span>
           {timerRemaining !== null && (
-            <span className="text-sm font-medium text-accent-glow tabular-nums">
+            <span className="countdown-pulse text-sm font-semibold text-accent-glow tabular-nums">
               {formatTime(timerRemaining)}
             </span>
           )}
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {TIMER_OPTIONS.map((min) => (
-            <button
-              key={min}
-              onClick={() => handleTimer(min)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                timerMinutes === min
-                  ? "bg-accent text-white"
-                  : "bg-white/[0.06] text-muted hover:bg-white/[0.1] hover:text-white"
-              }`}
-            >
-              {min}m
-            </button>
-          ))}
+          {TIMER_OPTIONS.map((min) => {
+            const isActive = timerMinutes === min;
+            const isBouncing = bouncingPill === min;
+            return (
+              <button
+                key={min}
+                onClick={() => handleTimer(min)}
+                className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
+                  isBouncing ? "pill-bounce" : ""
+                } ${
+                  isActive
+                    ? "bg-accent text-white shadow-lg shadow-accent/25"
+                    : "bg-surface-light text-white/80 hover:bg-white/[0.12]"
+                }`}
+              >
+                {min}m
+              </button>
+            );
+          })}
           <button
             onClick={() => handleTimer(null)}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+            className={`px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ${
               timerMinutes === null
-                ? "bg-white/[0.12] text-white"
-                : "bg-white/[0.06] text-muted hover:bg-white/[0.1] hover:text-white"
+                ? "bg-white/[0.15] text-white"
+                : "bg-surface-light text-white/80 hover:bg-white/[0.12]"
             }`}
           >
             Off
@@ -371,19 +415,21 @@ export default function PlayerPage() {
       </div>
 
       {/* ── Mix indicator dots ───────────────────────────── */}
-      <div className="flex gap-2 mt-auto pt-6">
+      <div className="flex gap-3 mt-auto pt-8">
         {mixes.map((_, i) => (
           <button
             key={i}
             onClick={() => {
               setCurrentIndex(i);
+              setCardKey((k) => k + 1);
               if (isPlaying) playCurrentMix(mixes[i]);
             }}
-            className={`w-2 h-2 rounded-full transition-all duration-200 ${
+            className={`rounded-full transition-all duration-300 ${
               i === currentIndex
-                ? "bg-accent-glow scale-125"
-                : "bg-white/20 hover:bg-white/40"
+                ? "w-2.5 h-2.5 bg-accent-glow shadow-sm shadow-accent/40"
+                : "w-2 h-2 bg-white/20 hover:bg-white/40"
             }`}
+            style={{ minWidth: i === currentIndex ? 10 : 8, minHeight: i === currentIndex ? 10 : 8 }}
             aria-label={`Go to mix ${i + 1}`}
           />
         ))}
