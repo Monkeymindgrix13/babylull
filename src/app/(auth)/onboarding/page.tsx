@@ -54,7 +54,7 @@ function SelectCard({
       onClick={onClick}
       className={`rounded-xl p-4 text-sm font-medium cursor-pointer transition-all duration-200 text-left flex flex-col items-center justify-center gap-2 ${
         selected
-          ? "border-accent bg-accent/10 text-white"
+          ? "border border-accent bg-accent/10 text-white"
           : "bg-surface border border-white/[0.06] text-muted hover:text-white hover:border-white/[0.12]"
       }`}
     >
