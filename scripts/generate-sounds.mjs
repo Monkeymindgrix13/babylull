@@ -141,6 +141,7 @@ function oceanWaves() {
 
 function heartbeat() {
   // Double-pulse heartbeat at ~65 BPM
+  // Uses higher harmonics (100-300 Hz) so it's audible on phone speakers
   const samples = new Float64Array(NUM_SAMPLES);
   const bpm = 65;
   const beatInterval = (60 / bpm) * SAMPLE_RATE;
@@ -149,15 +150,30 @@ function heartbeat() {
     const posInBeat = i % beatInterval;
     const t = posInBeat / SAMPLE_RATE;
 
-    // Two thumps per beat (lub-dub)
-    const lub = Math.exp(-t * 20) * Math.sin(2 * Math.PI * 50 * t);
-    const dubDelay = t - 0.15;
-    const dub =
-      dubDelay > 0
-        ? Math.exp(-dubDelay * 25) * Math.sin(2 * Math.PI * 40 * dubDelay) * 0.6
-        : 0;
+    // Lub — primary thump with harmonics audible on small speakers
+    const lubEnv = Math.exp(-t * 15);
+    const lub =
+      lubEnv *
+      (Math.sin(2 * Math.PI * 60 * t) * 0.4 +
+        Math.sin(2 * Math.PI * 120 * t) * 0.3 +
+        Math.sin(2 * Math.PI * 180 * t) * 0.2 +
+        Math.sin(2 * Math.PI * 240 * t) * 0.1);
 
-    samples[i] = (lub + dub) * 0.5;
+    // Dub — secondary thump, slightly delayed
+    const dubDelay = t - 0.15;
+    let dub = 0;
+    if (dubDelay > 0) {
+      const dubEnv = Math.exp(-dubDelay * 18);
+      dub =
+        dubEnv *
+        (Math.sin(2 * Math.PI * 80 * dubDelay) * 0.3 +
+          Math.sin(2 * Math.PI * 160 * dubDelay) * 0.25 +
+          Math.sin(2 * Math.PI * 240 * dubDelay) * 0.15 +
+          Math.sin(2 * Math.PI * 300 * dubDelay) * 0.08) *
+        0.7;
+    }
+
+    samples[i] = (lub + dub) * 0.55;
   }
   return crossfade(samples);
 }
