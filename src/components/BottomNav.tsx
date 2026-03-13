@@ -1,27 +1,29 @@
 "use client";
 
-import { Home, Music, User } from "lucide-react";
-import { useState } from "react";
+import { Home, Volume2, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
+import { type LucideIcon } from "lucide-react";
 
-const tabs = [
-  { id: "home", label: "Home", icon: Home },
-  { id: "mixes", label: "Mixes", icon: Music },
-  { id: "profile", label: "Profile", icon: User },
-] as const;
+const tabs: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/player", label: "Sounds", icon: Volume2 },
+  { href: "/profile", label: "Profile", icon: User },
+];
 
 export default function BottomNav() {
-  const [active, setActive] = useState<string>("home");
+  const pathname = usePathname();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl bg-background/80 border-t border-white/5">
       <div className="flex items-center justify-around h-16 px-4 max-w-md mx-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = active === tab.id;
+          const isActive = pathname === tab.href;
           return (
-            <button
-              key={tab.id}
-              onClick={() => setActive(tab.id)}
+            <Link
+              key={tab.href}
+              href={tab.href}
               className="flex flex-col items-center gap-1 py-1 px-4 transition-all duration-200"
             >
               <div className={`relative p-1.5 rounded-xl transition-all duration-200 ${
@@ -43,7 +45,7 @@ export default function BottomNav() {
               }`}>
                 {tab.label}
               </span>
-            </button>
+            </Link>
           );
         })}
       </div>
