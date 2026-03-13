@@ -7,7 +7,7 @@ import { type LucideIcon } from "lucide-react";
 
 const tabs: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/player", label: "Sounds", icon: Volume2 },
+  { href: "/player", label: "Player", icon: Volume2 },
   { href: "/profile", label: "Profile", icon: User },
 ];
 

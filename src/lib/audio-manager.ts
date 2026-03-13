@@ -88,6 +88,41 @@ class AudioManager {
     }
   }
 
+  getMasterVolume(): number {
+    return this.masterGain?.gain.value ?? 0.7;
+  }
+
+  async playMix(layers: { sound_id: string; url: string; volume: number }[]): Promise<void> {
+    this.stopAll();
+    // Restore master gain in case a previous fadeOut zeroed it
+    if (this.masterGain) {
+      this.masterGain.gain.cancelScheduledValues(this.ctx!.currentTime);
+      this.masterGain.gain.value = this.getMasterVolume() || 0.7;
+    }
+    for (const layer of layers) {
+      await this.play(layer.sound_id, layer.url);
+      this.setVolume(layer.sound_id, layer.volume);
+    }
+  }
+
+  fadeOut(durationMs: number): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.masterGain || !this.ctx) {
+        this.stopAll();
+        resolve();
+        return;
+      }
+      const now = this.ctx.currentTime;
+      const duration = durationMs / 1000;
+      this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+      this.masterGain.gain.linearRampToValueAtTime(0, now + duration);
+      setTimeout(() => {
+        this.stopAll();
+        resolve();
+      }, durationMs);
+    });
+  }
+
   isPlaying(id: string): boolean {
     return this.playing.has(id);
   }
