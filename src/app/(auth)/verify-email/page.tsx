@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-const CODE_LENGTH = 6;
+const CODE_LENGTH = 8;
 
 export default function VerifyEmailPage() {
   return (
@@ -52,7 +52,7 @@ function VerifyEmailContent() {
       setVerifying(false);
 
       if (verifyError) {
-        setError(verifyError.message);
+        setError("That code didn't work. Please try again or request a new one.");
         setDigits(Array(CODE_LENGTH).fill(""));
         inputsRef.current[0]?.focus();
         return;
@@ -142,7 +142,7 @@ function VerifyEmailContent() {
 
       <h1 className="text-xl font-semibold text-white mb-2">Check your inbox</h1>
       <p className="text-sm text-muted leading-relaxed mb-6">
-        We sent a 6-digit code to{" "}
+        We sent an 8-digit code to{" "}
         <span className="text-white font-medium">{email || "your email"}</span>.
         {" "}Enter it below to get started.
       </p>
