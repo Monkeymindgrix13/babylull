@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Play,
   Pause,
@@ -62,6 +62,7 @@ export default function PlayerPage() {
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
   const gainRef = useRef<GainNode | null>(null);
   const bufferCache = useRef<Map<string, AudioBuffer>>(new Map());
+  const activeIdRef = useRef<string | null>(null);
 
   // Fetch sounds from Supabase
   useEffect(() => {
@@ -93,70 +94,70 @@ export default function PlayerPage() {
     };
   }, []);
 
-  const stopCurrent = useCallback(() => {
+  function stopCurrent() {
     if (sourceRef.current) {
       sourceRef.current.stop();
       sourceRef.current.disconnect();
       sourceRef.current = null;
     }
-  }, []);
+    gainRef.current = null;
+  }
 
-  const playSound = useCallback(
-    async (sound: Sound) => {
-      // Toggle off if already playing
-      if (activeId === sound.id) {
-        stopCurrent();
-        setActiveId(null);
-        return;
-      }
-
-      // Ensure AudioContext exists
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioContext();
-      }
-      const ctx = audioCtxRef.current;
-
-      // Resume if suspended (autoplay policy)
-      if (ctx.state === "suspended") {
-        await ctx.resume();
-      }
-
-      // Stop whatever is playing
+  async function playSound(sound: Sound) {
+    // Toggle off if already playing
+    if (activeIdRef.current === sound.id) {
       stopCurrent();
+      activeIdRef.current = null;
+      setActiveId(null);
+      return;
+    }
 
-      // Fetch + decode (with cache)
-      let buffer = bufferCache.current.get(sound.id);
-      if (!buffer) {
-        const res = await fetch(sound.file_url);
-        const arrayBuf = await res.arrayBuffer();
-        buffer = await ctx.decodeAudioData(arrayBuf);
-        bufferCache.current.set(sound.id, buffer);
+    // Ensure AudioContext exists
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new AudioContext();
+    }
+    const ctx = audioCtxRef.current;
+
+    // Resume if suspended (autoplay policy)
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
+
+    // Stop whatever is playing
+    stopCurrent();
+
+    // Fetch + decode (with cache)
+    let buffer = bufferCache.current.get(sound.id);
+    if (!buffer) {
+      const res = await fetch(sound.file_url);
+      const arrayBuf = await res.arrayBuffer();
+      buffer = await ctx.decodeAudioData(arrayBuf);
+      bufferCache.current.set(sound.id, buffer);
+    }
+
+    // Create nodes
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = true;
+
+    const gain = ctx.createGain();
+    gain.gain.value = volume;
+
+    source.connect(gain).connect(ctx.destination);
+    source.start();
+
+    sourceRef.current = source;
+    gainRef.current = gain;
+    activeIdRef.current = sound.id;
+    setActiveId(sound.id);
+
+    source.onended = () => {
+      if (activeIdRef.current === sound.id) {
+        activeIdRef.current = null;
+        setActiveId(null);
       }
-
-      // Create nodes
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      source.loop = true;
-
-      const gain = ctx.createGain();
-      gain.gain.value = volume;
-
-      source.connect(gain).connect(ctx.destination);
-      source.start();
-
-      sourceRef.current = source;
-      gainRef.current = gain;
-      setActiveId(sound.id);
-
-      // Handle natural end (shouldn't happen with loop, but safety)
-      source.onended = () => {
-        if (activeId === sound.id) {
-          setActiveId(null);
-        }
-      };
-    },
-    [activeId, volume, stopCurrent]
-  );
+    };
+  }
 
   // Group sounds by layer
   const grouped = LAYER_ORDER.map((layer) => ({
