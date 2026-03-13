@@ -296,12 +296,10 @@ export default function PlayerPage() {
 
         <Icon size={64} className="text-white/90 relative z-10" strokeWidth={1.5} />
 
-        <div className="text-center px-6 relative z-10">
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-2xl font-bold text-white">{currentMix.name}</h1>
-            {isPlaying && <EqBars playing={isPlaying} />}
-          </div>
-          <p className="text-sm text-white/70 mt-1.5">{currentMix.description}</p>
+        <div className="text-center px-6 relative z-10 flex flex-col items-center gap-2">
+          <h1 className="text-2xl font-bold text-white">{currentMix.name}</h1>
+          <p className="text-sm text-white/70">{currentMix.description}</p>
+          {isPlaying && <EqBars playing={isPlaying} />}
         </div>
       </div>
 
