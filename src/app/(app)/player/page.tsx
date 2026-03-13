@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import {
   Play,
   Pause,
+  Square,
   Volume2,
+  VolumeX,
   Wind,
   Music,
   TreePine,
@@ -13,6 +15,7 @@ import {
   Waves,
   Sparkles,
   Loader2,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
@@ -30,7 +33,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Sparkles,
 };
 
-// ── Layer labels ─────────────────────────────────────────────
+// ── Layer config ─────────────────────────────────────────────
 
 const LAYER_ORDER = ["melody", "background", "rhythm", "ambience"] as const;
 const LAYER_LABELS: Record<string, string> = {
@@ -50,21 +53,58 @@ interface Sound {
   icon_name: string;
 }
 
+interface ActiveSound {
+  sound: Sound;
+  source: AudioBufferSourceNode;
+  gain: GainNode;
+  volume: number;
+}
+
+// ── Volume slider component ──────────────────────────────────
+
+function VolumeSlider({
+  value,
+  onChange,
+  small,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  small?: boolean;
+}) {
+  return (
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.01"
+      value={value}
+      onChange={(e) => onChange(parseFloat(e.target.value))}
+      className={`flex-1 rounded-full appearance-none bg-white/10 accent-accent cursor-pointer ${
+        small ? "h-1" : "h-1.5"
+      }`}
+      style={{
+        background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${value * 100}%, rgba(255,255,255,0.1) ${value * 100}%, rgba(255,255,255,0.1) 100%)`,
+      }}
+    />
+  );
+}
+
 // ── Component ────────────────────────────────────────────────
 
 export default function PlayerPage() {
   const [sounds, setSounds] = useState<Sound[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [volume, setVolume] = useState(0.7);
+  const [activeSounds, setActiveSounds] = useState<Map<string, ActiveSound>>(
+    new Map()
+  );
+  const [masterVolume, setMasterVolume] = useState(0.7);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const gainRef = useRef<GainNode | null>(null);
+  const masterGainRef = useRef<GainNode | null>(null);
   const bufferCache = useRef<Map<string, AudioBuffer>>(new Map());
-  const activeIdRef = useRef<string | null>(null);
+  const activeSoundsRef = useRef<Map<string, ActiveSound>>(new Map());
 
-  // Fetch sounds from Supabase
+  // Fetch sounds
   useEffect(() => {
     async function load() {
       const { data } = await supabase
@@ -72,61 +112,98 @@ export default function PlayerPage() {
         .select("*")
         .order("layer_type")
         .order("name");
-
       if (data) setSounds(data);
       setLoading(false);
     }
     load();
   }, []);
 
-  // Sync volume changes
+  // Sync master volume
   useEffect(() => {
-    if (gainRef.current) {
-      gainRef.current.gain.value = volume;
+    if (masterGainRef.current) {
+      masterGainRef.current.gain.value = masterVolume;
     }
-  }, [volume]);
+  }, [masterVolume]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      sourceRef.current?.stop();
+      activeSoundsRef.current.forEach((a) => {
+        a.source.stop();
+        a.source.disconnect();
+      });
       audioCtxRef.current?.close();
     };
   }, []);
 
-  function stopCurrent() {
-    if (sourceRef.current) {
-      sourceRef.current.stop();
-      sourceRef.current.disconnect();
-      sourceRef.current = null;
+  function getAudioContext(): AudioContext {
+    if (!audioCtxRef.current) {
+      const ctx = new AudioContext();
+      const master = ctx.createGain();
+      master.gain.value = masterVolume;
+      master.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      masterGainRef.current = master;
     }
-    gainRef.current = null;
+    return audioCtxRef.current;
   }
 
-  async function playSound(sound: Sound) {
-    // Toggle off if already playing
-    if (activeIdRef.current === sound.id) {
-      stopCurrent();
-      activeIdRef.current = null;
-      setActiveId(null);
+  function stopSound(soundId: string) {
+    const active = activeSoundsRef.current.get(soundId);
+    if (active) {
+      active.source.stop();
+      active.source.disconnect();
+      active.gain.disconnect();
+      activeSoundsRef.current.delete(soundId);
+      setActiveSounds(new Map(activeSoundsRef.current));
+    }
+  }
+
+  function stopLayer(layerType: string) {
+    activeSoundsRef.current.forEach((active, id) => {
+      if (active.sound.layer_type === layerType) {
+        stopSound(id);
+      }
+    });
+  }
+
+  function stopAll() {
+    activeSoundsRef.current.forEach((active) => {
+      active.source.stop();
+      active.source.disconnect();
+      active.gain.disconnect();
+    });
+    activeSoundsRef.current.clear();
+    setActiveSounds(new Map());
+  }
+
+  function updateSoundVolume(soundId: string, vol: number) {
+    const active = activeSoundsRef.current.get(soundId);
+    if (active) {
+      active.gain.gain.value = vol;
+      active.volume = vol;
+      activeSoundsRef.current.set(soundId, active);
+      setActiveSounds(new Map(activeSoundsRef.current));
+    }
+  }
+
+  async function toggleSound(sound: Sound) {
+    // If this exact sound is playing, stop it
+    if (activeSoundsRef.current.has(sound.id)) {
+      stopSound(sound.id);
       return;
     }
 
-    // Ensure AudioContext exists
-    if (!audioCtxRef.current) {
-      audioCtxRef.current = new AudioContext();
-    }
-    const ctx = audioCtxRef.current;
+    const ctx = getAudioContext();
 
-    // Resume if suspended (autoplay policy)
     if (ctx.state === "suspended") {
       await ctx.resume();
     }
 
-    // Stop whatever is playing
-    stopCurrent();
+    // Stop any other sound in the same layer
+    stopLayer(sound.layer_type);
 
-    // Fetch + decode (with cache)
+    // Fetch + decode (cached)
     let buffer = bufferCache.current.get(sound.id);
     if (!buffer) {
       const res = await fetch(sound.file_url);
@@ -135,26 +212,25 @@ export default function PlayerPage() {
       bufferCache.current.set(sound.id, buffer);
     }
 
-    // Create nodes
+    // Create audio nodes: source → gain → masterGain → destination
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.loop = true;
 
     const gain = ctx.createGain();
-    gain.gain.value = volume;
+    gain.gain.value = 0.7;
 
-    source.connect(gain).connect(ctx.destination);
+    source.connect(gain).connect(masterGainRef.current!);
     source.start();
 
-    sourceRef.current = source;
-    gainRef.current = gain;
-    activeIdRef.current = sound.id;
-    setActiveId(sound.id);
+    const activeSound: ActiveSound = { sound, source, gain, volume: 0.7 };
+    activeSoundsRef.current.set(sound.id, activeSound);
+    setActiveSounds(new Map(activeSoundsRef.current));
 
     source.onended = () => {
-      if (activeIdRef.current === sound.id) {
-        activeIdRef.current = null;
-        setActiveId(null);
+      if (activeSoundsRef.current.has(sound.id)) {
+        activeSoundsRef.current.delete(sound.id);
+        setActiveSounds(new Map(activeSoundsRef.current));
       }
     };
   }
@@ -166,6 +242,9 @@ export default function PlayerPage() {
     items: sounds.filter((s) => s.layer_type === layer),
   })).filter((g) => g.items.length > 0);
 
+  const activeList = Array.from(activeSounds.values());
+  const hasActive = activeList.length > 0;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -175,33 +254,83 @@ export default function PlayerPage() {
   }
 
   return (
-    <div className="px-4 py-6 max-w-md mx-auto space-y-8">
+    <div className="px-4 py-6 max-w-md mx-auto space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-xl font-semibold text-white">Sounds</h1>
         <p className="text-sm text-muted mt-1">
-          Tap a sound to play. Tap again to stop.
+          Layer up to 4 sounds — one per category.
         </p>
       </div>
 
-      {/* Volume control */}
-      <div className="flex items-center gap-3 bg-surface rounded-xl p-4 border border-white/[0.06]">
-        <Volume2 size={18} className="text-muted flex-shrink-0" />
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.01"
-          value={volume}
-          onChange={(e) => setVolume(parseFloat(e.target.value))}
-          className="flex-1 h-1.5 rounded-full appearance-none bg-white/10 accent-accent cursor-pointer"
-          style={{
-            background: `linear-gradient(to right, var(--accent) 0%, var(--accent) ${volume * 100}%, rgba(255,255,255,0.1) ${volume * 100}%, rgba(255,255,255,0.1) 100%)`,
-          }}
-        />
-        <span className="text-xs text-muted w-8 text-right tabular-nums">
-          {Math.round(volume * 100)}
-        </span>
+      {/* Master volume + Stop All */}
+      <div className="bg-surface rounded-xl p-4 border border-white/[0.06] space-y-3">
+        <div className="flex items-center gap-3">
+          {masterVolume > 0 ? (
+            <Volume2 size={18} className="text-muted flex-shrink-0" />
+          ) : (
+            <VolumeX size={18} className="text-muted flex-shrink-0" />
+          )}
+          <VolumeSlider value={masterVolume} onChange={setMasterVolume} />
+          <span className="text-xs text-muted w-8 text-right tabular-nums">
+            {Math.round(masterVolume * 100)}
+          </span>
+        </div>
+        {hasActive && (
+          <button
+            onClick={stopAll}
+            className="w-full flex items-center justify-center gap-2 h-9 rounded-lg bg-white/[0.04] border border-white/[0.06] text-sm text-muted hover:text-white hover:border-white/[0.12] transition-colors"
+          >
+            <Square size={14} />
+            Stop All
+          </button>
+        )}
       </div>
+
+      {/* Now Playing */}
+      {hasActive && (
+        <section>
+          <h2 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
+            Now Playing
+          </h2>
+          <div className="space-y-2">
+            {activeList.map(({ sound, volume: vol }) => {
+              const Icon = ICON_MAP[sound.icon_name] || Volume2;
+              return (
+                <div
+                  key={sound.id}
+                  className="flex items-center gap-3 bg-surface rounded-xl px-4 py-3 border border-accent/20"
+                >
+                  <div className="p-1.5 rounded-full bg-accent/20 flex-shrink-0">
+                    <Icon size={16} className="text-accent-glow" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white truncate">
+                      {sound.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <VolumeSlider
+                        value={vol}
+                        onChange={(v) => updateSoundVolume(sound.id, v)}
+                        small
+                      />
+                      <span className="text-[10px] text-muted w-6 text-right tabular-nums">
+                        {Math.round(vol * 100)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => stopSound(sound.id)}
+                    className="p-1.5 rounded-lg hover:bg-white/[0.06] transition-colors flex-shrink-0"
+                  >
+                    <X size={16} className="text-muted hover:text-white" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Sound layers */}
       {grouped.map(({ layer, label, items }) => (
@@ -212,11 +341,11 @@ export default function PlayerPage() {
           <div className="grid grid-cols-2 gap-3">
             {items.map((sound) => {
               const Icon = ICON_MAP[sound.icon_name] || Volume2;
-              const isPlaying = activeId === sound.id;
+              const isPlaying = activeSounds.has(sound.id);
               return (
                 <button
                   key={sound.id}
-                  onClick={() => playSound(sound)}
+                  onClick={() => toggleSound(sound)}
                   className={`relative rounded-xl p-4 flex flex-col items-center gap-2.5 transition-all duration-200 ${
                     isPlaying
                       ? "border border-accent bg-accent/10"
@@ -242,7 +371,6 @@ export default function PlayerPage() {
                   >
                     {sound.name}
                   </span>
-                  {/* Play/Pause indicator */}
                   <div className="absolute top-2.5 right-2.5">
                     {isPlaying ? (
                       <Pause size={14} className="text-accent-glow" />
