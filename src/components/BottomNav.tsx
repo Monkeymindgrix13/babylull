@@ -1,14 +1,13 @@
 "use client";
 
-import { Home, Library, Volume2 } from "lucide-react";
+import { Home, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 
 const tabs: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/mixes", label: "Mixes", icon: Library },
-  { href: "/player", label: "Player", icon: Volume2 },
+  { href: "/profile", label: "Profile", icon: User },
 ];
 
 export default function BottomNav() {
