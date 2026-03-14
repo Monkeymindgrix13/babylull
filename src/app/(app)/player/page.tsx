@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import {
   Play,
   Pause,
@@ -17,6 +17,7 @@ import {
   Loader2,
   type LucideIcon,
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { audioManager } from "@/lib/audio-manager";
 
@@ -71,7 +72,8 @@ function EqBars({ playing }: { playing: boolean }) {
 
 // ── Component ────────────────────────────────────────────────
 
-export default function PlayerPage() {
+function PlayerContent() {
+  const searchParams = useSearchParams();
   const [mixes, setMixes] = useState<MixWithUrls[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -152,6 +154,28 @@ export default function PlayerPage() {
     },
     [masterVolume]
   );
+
+  // ── Auto-select mix from query param ────────────────────
+  const mixParamHandled = useRef(false);
+
+  useEffect(() => {
+    if (mixes.length === 0 || mixParamHandled.current) return;
+    const mixId = searchParams.get("mix");
+    if (!mixId) return;
+
+    const idx = mixes.findIndex((m) => m.id === mixId);
+    if (idx < 0) return;
+
+    mixParamHandled.current = true;
+    setCurrentIndex(idx);
+    setCardKey((k) => k + 1);
+
+    // Try to auto-play (may fail without user gesture on mobile)
+    audioManager
+      .unlock()
+      .then(() => playCurrentMix(mixes[idx]))
+      .catch(() => {});
+  }, [mixes, searchParams, playCurrentMix]);
 
   // ── Playback controls ────────────────────────────────────
 
@@ -436,5 +460,19 @@ export default function PlayerPage() {
         ))}
       </div>
     </div>
+  );
+}
+
+export default function PlayerPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 size={28} className="animate-spin text-accent" />
+        </div>
+      }
+    >
+      <PlayerContent />
+    </Suspense>
   );
 }
