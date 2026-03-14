@@ -14,15 +14,28 @@ class AudioManager {
   private masterGain: GainNode | null = null;
   private playing = new Map<string, PlayingSound>();
   private bufferCache = new Map<string, AudioBuffer>();
+  private _masterVolume = 0.7;
 
+  /** Create (or return existing) AudioContext + masterGain. */
   private ensureContext(): AudioContext {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.7;
+      this.masterGain.gain.value = this._masterVolume;
       this.masterGain.connect(this.ctx.destination);
     }
     return this.ctx;
+  }
+
+  /**
+   * Call from a user-gesture handler to unlock the AudioContext.
+   * Must run synchronously within the click/tap call-stack.
+   */
+  async unlock(): Promise<void> {
+    const ctx = this.ensureContext();
+    if (ctx.state === "suspended") {
+      await ctx.resume();
+    }
   }
 
   async play(id: string, url: string): Promise<void> {
@@ -36,12 +49,16 @@ class AudioManager {
     this.stop(id);
 
     // Fetch + decode (cached)
-    let buffer = this.bufferCache.get(id);
+    let buffer = this.bufferCache.get(url);
     if (!buffer) {
       const res = await fetch(url);
+      if (!res.ok) {
+        console.error(`[AudioManager] fetch failed for ${url}: ${res.status}`);
+        return;
+      }
       const arrayBuf = await res.arrayBuffer();
       buffer = await ctx.decodeAudioData(arrayBuf);
-      this.bufferCache.set(id, buffer);
+      this.bufferCache.set(url, buffer);
     }
 
     const source = ctx.createBufferSource();
@@ -83,25 +100,38 @@ class AudioManager {
   }
 
   setMasterVolume(value: number): void {
+    this._masterVolume = value;
     if (this.masterGain) {
       this.masterGain.gain.value = value;
     }
   }
 
   getMasterVolume(): number {
-    return this.masterGain?.gain.value ?? 0.7;
+    return this._masterVolume;
   }
 
   async playMix(layers: { sound_id: string; url: string; volume: number }[]): Promise<void> {
     this.stopAll();
+
     // Restore master gain in case a previous fadeOut zeroed it
-    if (this.masterGain) {
-      this.masterGain.gain.cancelScheduledValues(this.ctx!.currentTime);
-      this.masterGain.gain.value = this.getMasterVolume() || 0.7;
+    const ctx = this.ensureContext();
+    if (ctx.state === "suspended") {
+      await ctx.resume();
     }
+    this.masterGain!.gain.cancelScheduledValues(ctx.currentTime);
+    this.masterGain!.gain.value = this._masterVolume;
+
     for (const layer of layers) {
-      await this.play(layer.sound_id, layer.url);
-      this.setVolume(layer.sound_id, layer.volume);
+      if (!layer.url) {
+        console.warn(`[AudioManager] skipping layer ${layer.sound_id}: no url`);
+        continue;
+      }
+      try {
+        await this.play(layer.sound_id, layer.url);
+        this.setVolume(layer.sound_id, layer.volume);
+      } catch (err) {
+        console.error(`[AudioManager] failed to play layer ${layer.sound_id}:`, err);
+      }
     }
   }
 

@@ -161,6 +161,9 @@ export default function PlayerPage() {
     // Trigger ripple
     setRippleKey(Date.now());
 
+    // Unlock AudioContext synchronously within the user gesture
+    await audioManager.unlock();
+
     if (isPlaying) {
       audioManager.stopAll();
       setIsPlaying(false);
