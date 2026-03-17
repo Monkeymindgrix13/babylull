@@ -310,19 +310,21 @@ export default function PlayerBar() {
     );
   }
 
-  // ── Collapsed bar ─────────────────────────────────────────
+  // ── Collapsed mini bar ───────────────────────────────────
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 mx-3 rounded-2xl bg-surface border border-white/[0.06] shadow-lg shadow-black/30 overflow-hidden cursor-pointer"
-      style={{ bottom: "calc(4rem + env(safe-area-inset-bottom) + 8px)" }}
+      className="fixed left-0 right-0 z-40 backdrop-blur-xl bg-surface/80 border-t border-white/[0.06] cursor-pointer"
+      style={{
+        bottom: "calc(4rem + env(safe-area-inset-bottom))",
+        height: 56,
+      }}
       onClick={(e) => {
-        // Don't expand if tapping the pause button
         if ((e.target as HTMLElement).closest("[data-player-btn]")) return;
         expand();
       }}
     >
-      <div className="flex items-center gap-3 p-3">
+      <div className="flex items-center h-full px-3 gap-3">
         {/* Accent stripe */}
         <div
           className="w-1 self-stretch rounded-full flex-shrink-0"
@@ -336,17 +338,10 @@ export default function PlayerBar() {
           <h3 className="text-sm font-semibold text-white truncate">
             {currentMix.name}
           </h3>
-          <p className="text-[10px] text-muted truncate mt-0.5">
+          <p className="text-xs text-muted truncate mt-0.5">
             {currentMix.description}
           </p>
         </div>
-
-        {/* EQ bars when playing */}
-        {isPlaying && (
-          <div className="flex-shrink-0">
-            <EqBars playing={isPlaying} />
-          </div>
-        )}
 
         {/* Play/Pause button */}
         <button
@@ -355,7 +350,9 @@ export default function PlayerBar() {
             e.stopPropagation();
             togglePlayPause();
           }}
-          className="w-10 h-10 rounded-full bg-accent flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform"
+          className={`w-10 h-10 rounded-full bg-accent flex items-center justify-center flex-shrink-0 active:scale-95 transition-transform ${
+            isPlaying ? "mini-play-glow" : ""
+          }`}
           aria-label={isPlaying ? "Pause" : "Play"}
         >
           {isPlaying ? (

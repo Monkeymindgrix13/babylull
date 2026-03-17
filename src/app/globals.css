@@ -210,6 +210,16 @@ body {
   animation: slide-down 0.25s ease-in forwards;
 }
 
+/* Mini player bar play button pulsing glow */
+@keyframes mini-glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(124, 91, 245, 0.3), 0 0 24px rgba(124, 91, 245, 0.1); }
+  50%      { box-shadow: 0 0 18px rgba(124, 91, 245, 0.5), 0 0 36px rgba(124, 91, 245, 0.2); }
+}
+
+.mini-play-glow {
+  animation: mini-glow-pulse 2.5s ease-in-out infinite;
+}
+
 /* Hide scrollbar for horizontal scroll rows */
 .scrollbar-hide {
   -ms-overflow-style: none;
